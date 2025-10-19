@@ -7,6 +7,7 @@ import logging
 from dotenv import load_dotenv
 import os
 from datetime import datetime, timedelta
+import json
 
 
 env_path = Path(__file__).parent / '.env'
@@ -49,6 +50,13 @@ async def on_message(message):
 
     if 'shit' in message.content.lower():
         await message.channel.send(f'{message.author.mention} NO curses here! its not mega knight of you')
+
+    if 'beeri' in message.content.lower():
+        await message.channel.send('beeri epstin?')
+
+    if 'mega' in message.content.lower():
+        await message.channel.send('https://tenor.com/view/mega-knight-clash-royale-cr-mega-knight-gif-2741016234316380371')
+
         
 
     await bot.process_commands(message)
@@ -60,6 +68,7 @@ async def hello(ctx):
 @bot.command()
 async def mega(ctx):
     await ctx.send(f'{ctx.author.mention} MEGA KNIGHT COMMAND ACTIVATED! RAHHHHHHHHHH!')
+    await ctx.send('https://tenor.com/view/mega-knight-clash-royale-cr-mega-knight-gif-2741016234316380371')
 
 
 async def get_user_response(ctx, question, timeout=30):
@@ -88,8 +97,28 @@ async def check_bal(ctx,bal):
 async def gamble(ctx):
     bal = 100
     game = True
+
+    highs_path = Path(__file__).parent / 'highscores.json'
+    if highs_path.exists():
+        try:
+            with highs_path.open('r', encoding='utf-8') as f:
+                scores = json.load(f)
+        except json.JSONDecodeError:
+            scores = {}
+    else:
+        scores = {}
+    
+    if str(ctx.author.name) not in scores:
+        scores[str(ctx.author.name)] = 100
+  
+    
     await ctx.send(f'{ctx.author.mention} Hello! welcome to Mega Gamble!\n your current balance is {bal}$\n reply stop any time to stop.')
     while(game):
+        if bal > scores.get(str(ctx.author.name), 0):
+            scores[str(ctx.author.name)] = bal
+            with highs_path.open('w', encoding='utf-8') as f:
+                json.dump(scores, f, indent=4)
+
         bet = await get_user_response(ctx,f'{ctx.author.mention} How much do you want to gamble:')
 
         if bet is None or bet.lower() == 'stop':
@@ -106,7 +135,7 @@ async def gamble(ctx):
             await ctx.send(f'{ctx.author.mention} You cannot bet more than your current balance of {bal}$.')
             continue
 
-        roll = random.randint(1, 10)
+        roll = random.randint(1, 13)
         match roll:
             case 1: # lose
                 bal -= bet
@@ -147,8 +176,34 @@ async def gamble(ctx):
             case 10: #win 670$
                 bal += 670
                 await ctx.send(f'{ctx.author.mention} You won 670$! Your new balance is {bal}$.')
+            case 11: #W speed
+                smaller_chance = random.randint(1,5)
+                if smaller_chance == 3:
+                    bal += 10000
+                    await ctx.send(f'{ctx.author.mention}IShowSpeed donated 10K$!! W SPEED :mending_heart: Your new balance is {bal}$.')
+                else:
+                    await ctx.send(f'{ctx.author.mention} Speed watched you but didt liked you... Your balance remains {bal}$.')
+            case 12: #monkey incident
+                bal = 1
+                await ctx.send(f'{ctx.author.mention} A monkey stole almost all your money! Your new balance is {bal}$.')
+            case 13: #Mega win
+                smaller_chance = random.randint(1,20)
+                if smaller_chance == 6:
+                    bal += 100000
+                    await ctx.send(f'{ctx.author.mention} MEGA WIN!!! You won 100,000$!!! Your new balance is {bal}$.')
+                else:
+                    await ctx.send(f'{ctx.author.mention} So close to MEGA WIN... no prize this time. Your balance remains {bal}$.')
             case _:
                 await ctx.send(f'{ctx.author.mention} An error occurred with the roll. Please try again.')
+            
+
+@bot.command()
+async def checkhighscore(ctx):
+    scores = json.load(open('highscores.json','r'))
+    if str(ctx.author.name) in scores:
+        await ctx.send(f'{ctx.author.mention} Your highest balance achieved in Mega Gamble is {scores[str(ctx.author.name)]}$.')
+    else:
+        await ctx.send(f'{ctx.author.mention} You have not played Mega Gamble yet.')
             
 @bot.command()
 async def calc(ctx):
@@ -190,6 +245,7 @@ async def remindme(ctx):
     await ctx.send(f'{ctx.author.mention} Reminder: {reminder_text}')
             
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
+
 
 
 
